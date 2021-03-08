@@ -52,18 +52,19 @@ async def get_liters(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Refuel.mileage_state)
 async def get_mileage(message: types.Message, state: FSMContext):
-    last_mileage =  await db.select_last_five_refuels(user_id=message.from_user.id)
+    last_mileage = await db.select_last_five_refuels(user_id=message.from_user.id)
     print(len(last_mileage))
     try:
-        if len(last_mileage) == 0 or int(message.text)>last_mileage[0][4] :
+        if len(last_mileage) == 0 or int(message.text) > last_mileage[0][4]:
             mileage = abs(int(message.text))
         else:
             await message.answer('Ваш введеный пробег меньше текущего. Введите корректный пробег')
     except ValueError:
-            await message.answer('Вы ввели не число! Попробуйте еще раз.')
+        await message.answer('Вы ввели не число! Попробуйте еще раз.')
     await state.update_data(mileage_state=mileage)
     await message.answer('Выберите действие', reply_markup=choice2)
     await state.reset_state(with_data=False)
+
 
 @dp.message_handler(text='Редактировать')
 async def edit_refuel(message: types.Message):
@@ -72,6 +73,7 @@ async def edit_refuel(message: types.Message):
                          f'Второй ввод Литры\n'
                          f'Тредий ввод Пробег', reply_markup=ReplyKeyboardRemove())
     await Refuel.price_state.set()
+
 
 @dp.message_handler(state=Refuel.price_state)
 async def edit_price(message: types.Message, state: FSMContext):
@@ -84,6 +86,7 @@ async def edit_price(message: types.Message, state: FSMContext):
             await message.answer('Вы ввели отрицательное число! Поробуйте еще раз.')
     except ValueError:
         await message.answer('Вы ввели не число! Попробуйте еще раз.')
+    await state.update_data(price_state=price)
     await state.reset_state(with_data=False)
 
 
@@ -95,7 +98,7 @@ async def finish(message: types.Message, state: FSMContext):
     liters = round(data.get('liters_state'), 2)
     mileage = data.get('mileage_state')
     date = message.date
-    per_liter = round(price/liters, 2)
+    per_liter = round(price / liters, 2)
     try:
         await db.add_user(user_id=user_id, user_name=message.from_user.full_name)
     except:
@@ -120,16 +123,17 @@ async def get_statistics(message: types.Message):
 @dp.message_handler(text='Мои заправки')
 async def last_refuels(message: types.Message):
     all = await db.select_last_five_refuels(user_id=message.from_user.id)
-    i=0
-    while i<=len(all):
+    i = 0
+    while i <= len(all):
         await message.answer(f'Ваша запрвка:\n'
                              f'Дата: {all[i][1]}\n'
                              f'Сумма: {round(all[i][2], 2)}\n'
                              f'Литры: {round(all[i][3], 2)}\n'
                              f'Пробег: {all[i][4]}\n'
-                             f'Цена за литр: {round(all[i][2]/all[i][3], 2)}'
-                            , reply_markup=choice4)
-        i+=1
+                             f'Цена за литр: {round(all[i][2] / all[i][3], 2)}'
+                             , reply_markup=choice4)
+        i += 1
+
 
 @dp.message_handler(text='Общие данные')
 async def info_refuels(message: types.Message):
@@ -141,6 +145,4 @@ async def info_refuels(message: types.Message):
                          f'MIN цена литра: {round(min_per_liter[0][0], 2)}\n'
                          f'Всего заправок: {count_refuels[0][0]}\n'
                          f'Общие затраты: {round(sum_price[0][0], 2)}\n'
-                         f'Средняя заправка: {round(sum_price[0][0]/count_refuels[0][0], 2)}')
-
-
+                         f'Средняя заправка: {round(sum_price[0][0] / count_refuels[0][0], 2)}')
